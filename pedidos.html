@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gestión de pedidos | SmartRoute Web</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('gestion_pedidos.static', filename='css/pedidos.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <strong>SmartRoute Web</strong>
+      <span>LOGÍSTICA INTELIGENTE</span>
+    </div>
+    <span class="module-tag">Módulo 1 · Gestión de pedidos</span>
+  </header>
+
+  <main class="page">
+    <section class="hero">
+      <p class="eyebrow">MÓDULO 1</p>
+      <h1>Gestión de pedidos</h1>
+      <p>Registra, consulta y administra pedidos para la operación logística.</p>
+    </section>
+    {% if mensaje %}
+      <div class="notice {{ tipo_mensaje }}">{{ mensaje }}</div>
+    {% endif %}
+    {% if error %}
+      <div class="notice error">{{ error }}</div>
+    {% endif %}
+    <section class="card" aria-labelledby="registro-titulo">
+      <div class="section-heading">
+        <div>
+          <h2 id="registro-titulo">Registrar pedido</h2>
+          <p>La fecha y hora de ingreso se guardan automáticamente.</p>
+        </div>
+      </div>
+      <form method="post" action="{{ url_for('gestion_pedidos.listar') }}" class="form-grid">
+        <label>ID del pedido
+          <input name="id_pedido" required maxlength="40" placeholder="Ej. P-001" value="{{ valores.get('id_pedido', '') }}">
+        </label>
+        <label>Cliente
+          <input name="cliente" required maxlength="120" placeholder="Nombre del cliente" value="{{ valores.get('cliente', '') }}">
+        </label>
+        <label>Número de factura
+          <input name="factura" required maxlength="60" placeholder="Ej. F-1001" value="{{ valores.get('factura', '') }}">
+        </label>
+        <label>Peso (kg)
+          <input name="peso" type="number" min="0.01" step="0.01" required placeholder="Ej. 30" value="{{ valores.get('peso', '') }}">
+        </label>
+        <label>Volumen (m³)
+          <input name="volumen" type="number" min="0.01" step="0.01" required placeholder="Ej. 1.5" value="{{ valores.get('volumen', '') }}">
+        </label>
+        <label>Zona de destino
+          <input name="zona_destino" required maxlength="100" placeholder="Ej. Zona Norte" value="{{ valores.get('zona_destino', '') }}">
+        </label>
+        <label>Empleado que registra
+          <input name="usuario" required maxlength="120" placeholder="Nombre del empleado" value="{{ valores.get('usuario', '') }}">
+        </label>
+        <div class="form-action">
+          <button class="button primary" type="submit">Registrar pedido</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card" aria-labelledby="lista-titulo">
+      <div class="section-heading">
+        <div>
+          <h2 id="lista-titulo">Pedidos registrados</h2>
+          <p>Los pedidos anulados se conservan en el historial y no están disponibles para asignación.</p>
+        </div>
+        <span class="count">{{ pedidos|length }} pedido(s)</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th><th>Cliente</th><th>Factura</th><th>Peso</th><th>Volumen</th>
+              <th>Zona</th><th>Fecha de ingreso</th><th>Usuario de ingreso</th>
+              <th>Fecha de actualización</th><th>Usuario de actualización</th>
+              <th>Estado</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pedido in pedidos %}
+              <tr>
+                <td data-label="ID"><strong>{{ pedido["id_pedido"] }}</strong></td>
+                <td data-label="Cliente">{{ pedido["cliente"] }}</td>
+                <td data-label="Factura">{{ pedido["factura"] }}</td>
+                <td data-label="Peso">{{ "%.2f"|format(pedido["peso"]) }} kg</td>
+                <td data-label="Volumen">{{ "%.2f"|format(pedido["volumen"]) }} m³</td>
+                <td data-label="Zona">{{ pedido["zona_destino"] }}</td>
+                <td data-label="Fecha de ingreso">{{ pedido["fecha_ingreso"] }}</td>
+                <td data-label="Usuario de ingreso">{{ pedido["usuario_ingreso"] }}</td>
+                <td data-label="Fecha de actualización">{{ pedido["fecha_actualizacion"] or "—" }}</td>
+                <td data-label="Usuario de actualización">{{ pedido["usuario_actualizacion"] or "—" }}</td>
+                <td data-label="Estado"><span class="status status-{{ pedido['estado']|lower }}">{{ pedido["estado"] }}</span></td>
+                <td data-label="Acciones" class="actions-cell">
+                  {% if pedido["estado"] == "Pendiente" %}
+                    <details class="edit-details">
+                      <summary class="button small secondary">Editar</summary>
+                      <form class="edit-form" method="post" action="{{ url_for('gestion_pedidos.editar', id_pedido=pedido['id_pedido']) }}">
+                        <input type="hidden" name="id_pedido" value="{{ pedido['id_pedido'] }}">
+                        <label>Cliente<input name="cliente" required value="{{ pedido['cliente'] }}"></label>
+                        <label>Factura<input name="factura" required value="{{ pedido['factura'] }}"></label>
+                        <label>Peso (kg)<input name="peso" type="number" min="0.01" step="0.01" required value="{{ pedido['peso'] }}"></label>
+                        <label>Volumen (m³)<input name="volumen" type="number" min="0.01" step="0.01" required value="{{ pedido['volumen'] }}"></label>
+                        <label>Zona de destino<input name="zona_destino" required value="{{ pedido['zona_destino'] }}"></label>
+                        <label>Empleado que actualiza<input name="usuario" required placeholder="Nombre del empleado"></label>
+                        <button class="button primary small" type="submit">Guardar cambios</button>
+                      </form>
+                    </details>
+                    <form method="post" action="{{ url_for('gestion_pedidos.anular', id_pedido=pedido['id_pedido']) }}" class="inline-form">
+                      <input name="usuario_actualizacion" required aria-label="Empleado que anula" placeholder="Empleado que anula">
+                      <button class="button warning small" type="submit" onclick="return confirm('¿Anular este pedido? Se conservará en el historial.');">Anular</button>
+                    </form>
+                    <form method="post" action="{{ url_for('gestion_pedidos.eliminar', id_pedido=pedido['id_pedido']) }}" class="inline-form">
+                      <button class="button danger small" type="submit" onclick="return confirm('¿Eliminar definitivamente este pedido?');">Eliminar</button>
+                    </form>
+                  {% elif pedido["estado"] != "Anulado" %}
+                    <form method="post" action="{{ url_for('gestion_pedidos.cambiar_estado', id_pedido=pedido['id_pedido']) }}" class="state-form">
+                      <select name="estado" aria-label="Nuevo estado">
+                        {% for estado in estados %}
+                          <option value="{{ estado }}" {% if estado == pedido["estado"] %}selected{% endif %}>{{ estado }}</option>
+                        {% endfor %}
+                      </select>
+                      <input name="usuario_actualizacion" required aria-label="Empleado que actualiza" placeholder="Empleado">
+                      <button class="button secondary small" type="submit">Cambiar estado</button>
+                    </form>
+                  {% else %}
+                    <span class="muted">Registro cerrado</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% else %}
+              <tr><td class="empty" colspan="12">Todavía no hay pedidos registrados.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <footer>SmartRoute Web · Proyecto de Matemática Discreta</footer>
+  </main>
+</body>
+</html>
